@@ -243,34 +243,35 @@ switch ($action) {
                     $end = intval($matches[2]);
                 }
             }
-        }
-
-        if (isset($_SERVER['HTTP_RANGE'])) {
+            
             header('HTTP/1.1 206 Partial Content');
-        } else {
-            header('HTTP/1.1 200 OK');
-        }
-
-        header("Content-Type: $mime");
-        header('Cache-Control: public, must-revalidate, max-age=0');
-        header('Pragma: no-cache');  
-        header('Accept-Ranges: bytes');
-        header('Content-Length:' . (($end - $begin) + 1));
-        if (isset($_SERVER['HTTP_RANGE'])) {
+            header("Content-Type: $mime");
+            header('Cache-Control: public, must-revalidate, max-age=0');
+            header('Pragma: no-cache');  
+            header('Accept-Ranges: bytes');
+            header('Content-Length:' . (($end - $begin) + 1));
             header("Content-Range: bytes $begin-$end/$size");
-        }
-        header("Content-Disposition: inline; filename=".basename($fullPath));
-        header("Content-Transfer-Encoding: binary");
-        header("Last-Modified: $time");
+            header("Content-Disposition: inline; filename=".basename($fullPath));
+            header("Content-Transfer-Encoding: binary");
+            header("Last-Modified: $time");
 
-        $cur = $begin;
-        fseek($fm, $begin, 0);
+            $cur = $begin;
+            fseek($fm, $begin, 0);
 
-        // Stream file in chunks (16KB)
-        while(!feof($fm) && $cur <= $end && (connection_status() == 0)) {
-            print fread($fm, min(1024 * 16, ($end - $cur) + 1));
-            $cur += 1024 * 16;
-            flush();
+            // Stream file in chunks (16KB) for video seeking
+            while(!feof($fm) && $cur <= $end && (connection_status() == 0)) {
+                print fread($fm, min(1024 * 16, ($end - $cur) + 1));
+                $cur += 1024 * 16;
+                flush();
+            }
+        } else {
+            // Optimized full-file stream for images
+            header('HTTP/1.1 200 OK');
+            header("Content-Type: $mime");
+            header('Content-Length: ' . $size);
+            header("Content-Disposition: inline; filename=".basename($fullPath));
+            header("Last-Modified: $time");
+            readfile($fullPath);
         }
         
         fclose($fm);
