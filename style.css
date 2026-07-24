@@ -442,21 +442,29 @@ body {
 }
 
 @media (max-width: 600px) {
-    .content-area { padding: 1rem; }
-    .file-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-    .glass-header { padding: 1rem; }
+    .content-area { padding: 0.5rem; }
+    .file-grid { 
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+        gap: 0.8rem;
+    }
+    .glass-header { padding: 0.8rem; }
+    
+    .file-item { padding: 0.5rem; }
+    .file-icon { font-size: 3rem; height: 80px; }
+    .file-thumb { height: 80px; margin-bottom: 0.5rem; }
+    .file-name { font-size: 0.75rem; }
     
     .lightbox-content {
-        padding: 1rem;
+        padding: 0.5rem;
     }
     .lightbox-content img, .lightbox-content video {
-        max-width: 95vw;
-        max-height: 75vh;
+        max-width: 98vw;
+        max-height: 70vh;
         border-radius: 8px;
     }
     .lightbox-controls {
         gap: 1rem;
-        padding: 1rem;
+        padding: 0.5rem;
     }
     .lb-info {
         font-size: 0.8rem;

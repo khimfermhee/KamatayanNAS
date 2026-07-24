@@ -269,6 +269,31 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight' && currentMediaIndex < mediaItems.length - 1) { currentMediaIndex++; renderLightboxItem(); }
 });
 
+// Touch Swipe Support for Mobile
+let touchStartX = 0;
+let touchEndX = 0;
+
+lightbox.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+});
+
+lightbox.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+});
+
+function handleSwipe() {
+    const swipeThreshold = 50;
+    if (touchEndX < touchStartX - swipeThreshold) {
+        // Swiped left -> Next
+        if (currentMediaIndex < mediaItems.length - 1) { currentMediaIndex++; renderLightboxItem(); }
+    }
+    if (touchEndX > touchStartX + swipeThreshold) {
+        // Swiped right -> Prev
+        if (currentMediaIndex > 0) { currentMediaIndex--; renderLightboxItem(); }
+    }
+}
+
 // --- Admin ---
 const adminModal = document.getElementById('admin-modal');
 btnAdmin.addEventListener('click', () => {
