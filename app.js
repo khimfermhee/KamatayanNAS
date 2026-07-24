@@ -238,12 +238,14 @@ function renderLightboxItem() {
     const item = mediaItems[currentMediaIndex];
     lbInfo.innerText = `${currentMediaIndex + 1} / ${mediaItems.length} - ${item.name}`;
     
-    const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}`;
     if (item.type === 'image') {
+        const src = `api.php?action=preview&path=${encodeURIComponent(item.path)}`;
         lbContent.innerHTML = `<img src="${src}" alt="${item.name}">`;
     } else if (item.type === 'video') {
+        const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}`;
         lbContent.innerHTML = `<video src="${src}" controls autoplay></video>`;
     } else if (item.type === 'audio') {
+        const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}`;
         lbContent.innerHTML = `<audio src="${src}" controls autoplay></audio>`;
     }
 }

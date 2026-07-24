@@ -265,16 +265,68 @@ switch ($action) {
                 flush();
             }
         } else {
-            // Optimized full-file stream for images
+            // Optimized full-file stream for images/initial video requests
             header('HTTP/1.1 200 OK');
             header("Content-Type: $mime");
             header('Content-Length: ' . $size);
+            header('Accept-Ranges: bytes');
             header("Content-Disposition: inline; filename=".basename($fullPath));
             header("Last-Modified: $time");
             readfile($fullPath);
         }
         
         fclose($fm);
+        exit;
+
+    case 'preview':
+        // Generate a 1280px preview for fast lightbox viewing
+        $path = $_GET['path'] ?? '';
+        $fullPath = getFullPath($path);
+        if (!is_file($fullPath)) { http_response_code(404); die(); }
+        $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+            header('Location: ?action=stream&path=' . urlencode($path));
+            exit;
+        }
+
+        $previewDir = __DIR__ . '/.previews';
+        if (!is_dir($previewDir)) @mkdir($previewDir);
+        $previewName = md5($fullPath) . '_' . filemtime($fullPath) . '.jpg';
+        $previewPath = $previewDir . '/' . $previewName;
+
+        if (!function_exists('imagecreatetruecolor') || !is_dir($previewDir)) {
+            header('Location: ?action=stream&path=' . urlencode($path));
+            exit;
+        }
+
+        if (!file_exists($previewPath)) {
+            $size = @getimagesize($fullPath);
+            if (!$size || $size[0] == 0) { header('Location: ?action=stream&path=' . urlencode($path)); exit; }
+            $width = $size[0]; $height = $size[1];
+            
+            // Only resize if it's larger than 1280px
+            if ($width > 1280 || $height > 1280) {
+                if ($width > $height) { $new_width = 1280; $new_height = floor($height * (1280 / $width)); }
+                else { $new_height = 1280; $new_width = floor($width * (1280 / $height)); }
+            } else {
+                header('Location: ?action=stream&path=' . urlencode($path)); exit;
+            }
+
+            $thumb = imagecreatetruecolor($new_width, $new_height);
+            $source = false;
+            if ($ext == 'jpg' || $ext == 'jpeg') $source = @imagecreatefromjpeg($fullPath);
+            elseif ($ext == 'png') { $source = @imagecreatefrompng($fullPath); if($source) { imagealphablending($thumb, false); imagesavealpha($thumb, true); } }
+            elseif ($ext == 'gif') $source = @imagecreatefromgif($fullPath);
+            elseif ($ext == 'webp' && function_exists('imagecreatefromwebp')) $source = @imagecreatefromwebp($fullPath);
+            
+            if (!$source) { imagedestroy($thumb); header('Location: ?action=stream&path=' . urlencode($path)); exit; }
+            imagecopyresampled($thumb, $source, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
+            imagejpeg($thumb, $previewPath, 85);
+            imagedestroy($thumb); imagedestroy($source);
+        }
+        header('Content-Type: image/jpeg');
+        header('Content-Length: ' . filesize($previewPath));
+        readfile($previewPath);
         exit;
 
     case 'thumbnail':
