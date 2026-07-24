@@ -277,6 +277,11 @@ lightbox.addEventListener('touchstart', e => {
     touchStartX = e.changedTouches[0].screenX;
 });
 
+// Prevent browser from doing pull-to-refresh or back gestures while swiping images
+lightbox.addEventListener('touchmove', e => {
+    e.preventDefault();
+}, { passive: false });
+
 lightbox.addEventListener('touchend', e => {
     touchEndX = e.changedTouches[0].screenX;
     handleSwipe();
