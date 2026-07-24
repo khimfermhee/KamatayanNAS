@@ -240,7 +240,8 @@ function renderLightboxItem() {
     
     if (item.type === 'image') {
         const src = `api.php?action=preview&path=${encodeURIComponent(item.path)}`;
-        lbContent.innerHTML = `<img src="${src}" alt="${item.name}">`;
+        lbContent.innerHTML = `<i class="fas fa-circle-notch lb-spinner" id="lb-loader"></i>
+                               <img src="${src}" alt="${item.name}" onload="document.getElementById('lb-loader')?.remove()" onerror="document.getElementById('lb-loader')?.remove()">`;
     } else if (item.type === 'video') {
         const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}`;
         lbContent.innerHTML = `<video src="${src}" controls autoplay></video>`;

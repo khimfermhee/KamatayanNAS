@@ -475,3 +475,17 @@ body {
         text-align: center;
     }
 }
+
+.lb-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--primary-color);
+    font-size: 3rem;
+    animation: spin 1s linear infinite;
+    z-index: 10;
+}
+@keyframes spin {
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
