@@ -241,36 +241,62 @@ switch ($action) {
         }
 
         $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
-            // Just redirect to stream if not image, or serve a default icon
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
             header('Location: ?action=stream&path=' . urlencode($path));
             exit;
         }
 
         // Cache thumbnails in a local dir for speed
         $thumbDir = __DIR__ . '/.thumbs';
-        if (!is_dir($thumbDir)) mkdir($thumbDir);
+        if (!is_dir($thumbDir)) {
+            @mkdir($thumbDir);
+        }
         
         $thumbName = md5($fullPath) . '_' . filemtime($fullPath) . '.jpg';
         $thumbPath = $thumbDir . '/' . $thumbName;
 
+        // Check if GD extension is loaded, if not just stream the original
+        if (!function_exists('imagecreatetruecolor') || !is_dir($thumbDir)) {
+            header('Location: ?action=stream&path=' . urlencode($path));
+            exit;
+        }
+
         if (!file_exists($thumbPath)) {
             // Create thumbnail
-            list($width, $height) = getimagesize($fullPath);
+            $size = @getimagesize($fullPath);
+            if (!$size || $size[0] == 0) {
+                header('Location: ?action=stream&path=' . urlencode($path));
+                exit;
+            }
+            
+            $width = $size[0];
+            $height = $size[1];
             $new_width = 300;
             $new_height = floor($height * ($new_width / $width));
 
             $thumb = imagecreatetruecolor($new_width, $new_height);
+            $source = false;
             
-            if ($ext == 'jpg' || $ext == 'jpeg') $source = imagecreatefromjpeg($fullPath);
+            // Suppress warnings for corrupted/huge images
+            if ($ext == 'jpg' || $ext == 'jpeg') $source = @imagecreatefromjpeg($fullPath);
             elseif ($ext == 'png') {
-                $source = imagecreatefrompng($fullPath);
-                imagealphablending($thumb, false);
-                imagesavealpha($thumb, true);
+                $source = @imagecreatefrompng($fullPath);
+                if ($source) {
+                    imagealphablending($thumb, false);
+                    imagesavealpha($thumb, true);
+                }
             }
-            elseif ($ext == 'gif') $source = imagecreatefromgif($fullPath);
+            elseif ($ext == 'gif') $source = @imagecreatefromgif($fullPath);
+            elseif ($ext == 'webp' && function_exists('imagecreatefromwebp')) $source = @imagecreatefromwebp($fullPath);
             
-            imagecopyresized($thumb, $source, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
+            if (!$source) {
+                // Out of memory or unsupported format, fallback to original
+                imagedestroy($thumb);
+                header('Location: ?action=stream&path=' . urlencode($path));
+                exit;
+            }
+            
+            imagecopyresampled($thumb, $source, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
             imagejpeg($thumb, $thumbPath, 80);
             
             imagedestroy($thumb);
