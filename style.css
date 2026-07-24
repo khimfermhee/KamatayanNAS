@@ -445,4 +445,25 @@ body {
     .content-area { padding: 1rem; }
     .file-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
     .glass-header { padding: 1rem; }
+    
+    .lightbox-content {
+        padding: 1rem;
+    }
+    .lightbox-content img, .lightbox-content video {
+        max-width: 95vw;
+        max-height: 75vh;
+        border-radius: 8px;
+    }
+    .lightbox-controls {
+        gap: 1rem;
+        padding: 1rem;
+    }
+    .lb-info {
+        font-size: 0.8rem;
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+    }
 }
