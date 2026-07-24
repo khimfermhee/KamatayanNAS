@@ -399,10 +399,12 @@ body {
     padding: 2rem;
 }
 .lightbox-content img, .lightbox-content video {
-    max-width: 100%;
-    max-height: 100%;
+    max-width: 90vw;
+    max-height: 85vh;
     object-fit: contain;
-    border-radius: 4px;
+    border-radius: 12px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+    background: #000;
 }
 .lightbox-controls {
     display: flex;
