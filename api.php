@@ -159,8 +159,8 @@ switch ($action) {
                 'name' => $item,
                 'path' => ($path === '' ? '' : $path . '/') . $item,
                 'type' => $type,
-                'size' => $isDir ? 0 : filesize($itemPath),
-                'modified' => filemtime($itemPath)
+                'size' => 0,
+                'modified' => 0
             ];
         }
         
