@@ -1,4 +1,10 @@
 <?php
+// Make session persistent for 30 days so PWA users stay logged in across restarts
+session_set_cookie_params([
+    'lifetime' => 2592000,
+    'path' => '/',
+    'samesite' => 'Lax'
+]);
 session_start();
 header('Content-Type: application/json');
 
