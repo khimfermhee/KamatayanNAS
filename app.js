@@ -34,16 +34,28 @@ loginForm.addEventListener('submit', async (e) => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     
-    const res = await fetch('api.php?action=login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-    const json = await res.json();
-    if (json.status === 'success') {
-        showApp(json.data.role);
-    } else {
-        document.getElementById('login-error').innerText = json.message;
+    const btn = loginForm.querySelector('button[type="submit"]');
+    const originalText = btn.innerText;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Logging in...';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch('api.php?action=login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const json = await res.json();
+        if (json.status === 'success') {
+            showApp(json.data.role);
+        } else {
+            document.getElementById('login-error').innerText = json.message;
+        }
+    } catch (e) {
+        document.getElementById('login-error').innerText = 'Network error';
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 });
 
