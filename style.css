@@ -466,8 +466,13 @@ body {
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
         gap: 0.8rem;
     }
-    .glass-header { padding: 0.8rem; }
-    
+    .glass-header { 
+        padding: 0.8rem; 
+        flex-wrap: wrap;
+        gap: 0.8rem;
+    }
+    .header-left { width: 100%; flex: unset; }
+    .header-right { width: 100%; justify-content: flex-end; }
     .file-item { padding: 0.5rem; }
     .file-icon { font-size: 3rem; height: 80px; }
     .file-thumb { height: 80px; margin-bottom: 0.5rem; }
