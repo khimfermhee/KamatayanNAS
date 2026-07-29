@@ -17,6 +17,8 @@ session_set_cookie_params([
 ]);
 session_start();
 header('Content-Type: application/json');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 
 // --- Configuration ---
 // The root path to the NAS device. Ensure the user running XAMPP has permissions to this network share.

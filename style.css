@@ -27,6 +27,7 @@ body {
     overflow-x: hidden;
     position: relative;
     -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none; /* Disable pull-to-refresh */
 }
 
 /* --- Animated Background Shapes --- */
