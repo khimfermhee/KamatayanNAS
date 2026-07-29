@@ -157,6 +157,25 @@ async function loadDir(path, forceRefresh = false) {
     }
 }
 
+let currentRenderIndex = 0;
+const RENDER_BATCH_SIZE = 50;
+
+let sentinelObserver;
+
+function getSentinelObserver() {
+    if (!sentinelObserver) {
+        sentinelObserver = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && currentRenderIndex < currentItems.length) {
+                renderNextBatch();
+            }
+        }, { root: null, rootMargin: '400px' });
+        
+        const sentinel = document.getElementById('scroll-sentinel');
+        if (sentinel) sentinelObserver.observe(sentinel);
+    }
+    return sentinelObserver;
+}
+
 function renderDirectoryItems(items) {
     fileGrid.innerHTML = '';
     document.getElementById('empty-state').classList.add('hidden');
@@ -169,7 +188,19 @@ function renderDirectoryItems(items) {
         return;
     }
     
-    currentItems.forEach(item => {
+    currentRenderIndex = 0;
+    getSentinelObserver(); // Ensure observer is active
+    renderNextBatch();
+}
+
+function renderNextBatch() {
+    if (currentRenderIndex >= currentItems.length) return;
+    
+    const end = Math.min(currentRenderIndex + RENDER_BATCH_SIZE, currentItems.length);
+    const fragment = document.createDocumentFragment();
+    
+    for (let i = currentRenderIndex; i < end; i++) {
+        const item = currentItems[i];
         const div = document.createElement('div');
         div.className = 'file-item';
         div.dataset.path = item.path;
@@ -203,11 +234,14 @@ function renderDirectoryItems(items) {
         div.addEventListener('click', () => handleItemClick(item));
         div.addEventListener('contextmenu', (e) => showContextMenu(e, item));
         
-        fileGrid.appendChild(div);
+        fragment.appendChild(div);
         
         const lazyImg = div.querySelector('.lazy-thumb');
         if (lazyImg) getObserver().observe(lazyImg);
-    });
+    }
+    
+    fileGrid.appendChild(fragment);
+    currentRenderIndex = end;
 }
 
 function handleItemClick(item) {
