@@ -319,6 +319,18 @@ function updateBreadcrumbs() {
 
 btnHome.addEventListener('click', () => loadDir(''));
 
+const btnMenu = document.getElementById('btn-menu');
+const navActions = document.getElementById('nav-actions');
+if (btnMenu && navActions) {
+    btnMenu.addEventListener('click', () => navActions.classList.toggle('open'));
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.header-right')) {
+            navActions.classList.remove('open');
+        }
+    });
+}
+
 // --- Context Menu ---
 const contextMenu = document.getElementById('context-menu');
 document.addEventListener('click', () => contextMenu.classList.add('hidden'));

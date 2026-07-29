@@ -209,10 +209,19 @@ body {
     flex: 1;
     min-width: 0;
 }
+.mobile-only {
+    display: none;
+}
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
 .header-right {
     display: flex;
     align-items: center;
     gap: 1rem;
+    position: relative;
 }
 .breadcrumbs {
     display: flex;
@@ -466,13 +475,34 @@ body {
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
         gap: 0.8rem;
     }
+    .mobile-only {
+        display: flex;
+    }
+    .nav-actions {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: rgba(22, 27, 34, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-end;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        min-width: 150px;
+    }
+    .nav-actions.open {
+        display: flex;
+    }
     .glass-header { 
         padding: 0.8rem; 
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 0.8rem;
     }
-    .header-left { width: 100%; flex: unset; }
-    .header-right { width: 100%; justify-content: flex-end; }
+    .header-left { width: auto; flex: 1; }
+    .header-right { width: auto; justify-content: flex-end; }
     .file-item { padding: 0.5rem; }
     .file-icon { font-size: 3rem; height: 80px; }
     .file-thumb { height: 80px; margin-bottom: 0.5rem; }
