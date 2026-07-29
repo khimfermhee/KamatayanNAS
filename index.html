@@ -50,6 +50,14 @@
                 <div id="breadcrumbs" class="breadcrumbs"></div>
             </div>
             <div class="header-right">
+                <select id="sort-select" class="btn outline-btn" style="padding: 0.4rem; font-size: 0.85rem;">
+                    <option value="name_asc">Name (A-Z)</option>
+                    <option value="name_desc">Name (Z-A)</option>
+                    <option value="date_desc">Newest</option>
+                    <option value="date_asc">Oldest</option>
+                    <option value="size_desc">Largest</option>
+                    <option value="size_asc">Smallest</option>
+                </select>
                 <button id="btn-admin" class="btn outline-btn hidden"><i class="fas fa-users-cog"></i> Admin</button>
                 <button id="btn-logout" class="icon-btn"><i class="fas fa-sign-out-alt"></i></button>
             </div>

@@ -180,8 +180,8 @@ switch ($action) {
                 'name' => $item,
                 'path' => ($path === '' ? '' : $path . '/') . $item,
                 'type' => $type,
-                'size' => 0,
-                'modified' => 0
+                'size' => @filesize($itemPath) ?: 0,
+                'modified' => @filemtime($itemPath) ?: 0
             ];
         }
         

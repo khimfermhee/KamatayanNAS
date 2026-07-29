@@ -160,6 +160,7 @@ async function loadDir(path, forceRefresh = false) {
         
         if (json.status === 'success') {
             dirCache[path] = json.data;
+            sortItems(json.data); // Apply current sort
             renderDirectoryItems(json.data);
         }
     } catch (e) {
@@ -170,6 +171,32 @@ async function loadDir(path, forceRefresh = false) {
 
 let currentRenderIndex = 0;
 const RENDER_BATCH_SIZE = 50;
+
+document.getElementById('sort-select').addEventListener('change', () => {
+    if (currentItems.length > 0) {
+        sortItems(currentItems);
+        renderDirectoryItems(currentItems);
+    }
+});
+
+function sortItems(items) {
+    const sortVal = document.getElementById('sort-select').value;
+    
+    items.sort((a, b) => {
+        if (a.type === 'folder' && b.type !== 'folder') return -1;
+        if (a.type !== 'folder' && b.type === 'folder') return 1;
+        
+        switch (sortVal) {
+            case 'name_asc': return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+            case 'name_desc': return b.name.toLowerCase().localeCompare(a.name.toLowerCase());
+            case 'date_desc': return b.modified - a.modified;
+            case 'date_asc': return a.modified - b.modified;
+            case 'size_desc': return b.size - a.size;
+            case 'size_asc': return a.size - b.size;
+            default: return 0;
+        }
+    });
+}
 
 let sentinelObserver;
 
@@ -374,9 +401,47 @@ function renderLightboxItem() {
     }
 }
 
+let isZoomed = false;
+function toggleZoom(e) {
+    const img = lbContent.querySelector('img');
+    if (!img) return;
+    
+    isZoomed = !isZoomed;
+    if (isZoomed) {
+        const rect = img.getBoundingClientRect();
+        const clientX = e.clientX ?? e.changedTouches?.[0]?.clientX ?? rect.left + rect.width / 2;
+        const clientY = e.clientY ?? e.changedTouches?.[0]?.clientY ?? rect.top + rect.height / 2;
+        
+        const x = ((clientX - rect.left) / rect.width) * 100;
+        const y = ((clientY - rect.top) / rect.height) * 100;
+        
+        img.style.transformOrigin = `${x}% ${y}%`;
+        img.style.transform = 'scale(3)';
+        img.style.cursor = 'zoom-out';
+        img.style.transition = 'transform 0.3s ease';
+    } else {
+        img.style.transform = 'scale(1)';
+        img.style.cursor = 'zoom-in';
+    }
+}
+
+lbContent.addEventListener('dblclick', toggleZoom);
+
+let lastTap = 0;
+lbContent.addEventListener('touchend', (e) => {
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
+    if (tapLength < 300 && tapLength > 0) {
+        toggleZoom(e);
+        e.preventDefault();
+    }
+    lastTap = currentTime;
+});
+
 document.querySelector('.close-lightbox').addEventListener('click', () => {
     lightbox.classList.add('hidden');
     lbContent.innerHTML = ''; // stop media
+    isZoomed = false;
 });
 
 document.getElementById('lb-prev').addEventListener('click', () => {
