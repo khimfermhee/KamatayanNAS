@@ -77,8 +77,47 @@ function showLogin() {
     loginView.classList.add('active');
 }
 
+// --- Thumbnail Queue Manager ---
+let thumbQueue = [];
+let activeThumbs = 0;
+const MAX_CONCURRENT_THUMBS = 4;
+
+function processThumbQueue() {
+    if (activeThumbs >= MAX_CONCURRENT_THUMBS || thumbQueue.length === 0) return;
+    
+    activeThumbs++;
+    const target = thumbQueue.shift();
+    
+    const img = target.el;
+    img.onload = img.onerror = () => {
+        activeThumbs--;
+        processThumbQueue();
+    };
+    img.src = target.src;
+}
+
+function clearThumbQueue() {
+    thumbQueue = [];
+}
+
+const lazyObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const el = entry.target;
+            const src = el.dataset.src;
+            if (src) {
+                thumbQueue.push({ el, src });
+                el.removeAttribute('data-src');
+                observer.unobserve(el);
+                processThumbQueue();
+            }
+        }
+    });
+}, { rootMargin: '200px' });
+
 // --- File Browser ---
 async function loadDir(path) {
+    clearThumbQueue();
     currentPath = path;
     updateBreadcrumbs();
     document.getElementById('loading-spinner').classList.remove('hidden');
@@ -109,7 +148,7 @@ async function loadDir(path) {
                 
                 let iconHtml = '';
                 if (item.type === 'image') {
-                    iconHtml = `<img class="file-thumb" src="api.php?action=thumbnail&path=${encodeURIComponent(item.path)}" loading="lazy">`;
+                    iconHtml = `<img class="file-thumb lazy-thumb" data-src="api.php?action=thumbnail&path=${encodeURIComponent(item.path)}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E">`;
                 } else if (item.type === 'folder') {
                     iconHtml = `<div class="file-icon folder"><i class="fas fa-folder"></i></div>`;
                 } else if (item.type === 'video') {
@@ -136,6 +175,9 @@ async function loadDir(path) {
                 div.addEventListener('contextmenu', (e) => showContextMenu(e, item));
                 
                 fileGrid.appendChild(div);
+                
+                const lazyImg = div.querySelector('.lazy-thumb');
+                if (lazyImg) lazyObserver.observe(lazyImg);
             });
         }
     } catch (e) {
