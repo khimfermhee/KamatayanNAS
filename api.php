@@ -141,18 +141,21 @@ switch ($action) {
         foreach ($scanned as $item) {
             if ($item === '.' || $item === '..') continue;
             $itemPath = $fullPath . DIRECTORY_SEPARATOR . $item;
-            $isDir = is_dir($itemPath);
             $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
             
-            $type = 'file';
-            if ($isDir) {
-                $type = 'folder';
-            } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
                 $type = 'image';
             } elseif (in_array($ext, ['mp4', 'webm', 'ogg', 'mov'])) {
                 $type = 'video';
             } elseif (in_array($ext, ['mp3', 'wav'])) {
                 $type = 'audio';
+            } else {
+                // Only perform the expensive network stat if we don't recognize the extension
+                if (is_dir($itemPath)) {
+                    $type = 'folder';
+                } else {
+                    $type = 'file';
+                }
             }
 
             $items[] = [
