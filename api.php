@@ -1,4 +1,14 @@
 <?php
+// Create a local session directory to isolate our sessions from XAMPP's aggressive global garbage collector
+$sessionPath = __DIR__ . '/sessions';
+if (!is_dir($sessionPath)) {
+    @mkdir($sessionPath, 0777, true);
+}
+session_save_path($sessionPath);
+
+// Tell the server to keep session files alive for 30 days
+ini_set('session.gc_maxlifetime', 2592000);
+
 // Make session persistent for 30 days so PWA users stay logged in across restarts
 session_set_cookie_params([
     'lifetime' => 2592000,
