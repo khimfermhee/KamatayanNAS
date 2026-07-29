@@ -248,6 +248,13 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+/* Touch feedback for all interactive elements */
+.primary-btn:active, .outline-btn:active, .icon-btn:active, .file-item:active, .breadcrumb-item:active {
+    transform: scale(0.96) !important;
+    opacity: 0.8;
+}
     text-align: center;
     position: relative;
     overflow: hidden;

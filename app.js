@@ -100,20 +100,26 @@ function clearThumbQueue() {
     thumbQueue = [];
 }
 
-const lazyObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            const el = entry.target;
-            const src = el.dataset.src;
-            if (src) {
-                thumbQueue.push({ el, src });
-                el.removeAttribute('data-src');
-                observer.unobserve(el);
-                processThumbQueue();
-            }
-        }
-    });
-}, { rootMargin: '200px' });
+let lazyObserver;
+function getObserver() {
+    if (!lazyObserver) {
+        lazyObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    const src = el.dataset.src;
+                    if (src) {
+                        thumbQueue.push({ el, src });
+                        el.removeAttribute('data-src');
+                        observer.unobserve(el);
+                        processThumbQueue();
+                    }
+                }
+            });
+        }, { root: null, rootMargin: '0px 0px 500px 0px' });
+    }
+    return lazyObserver;
+}
 
 const dirCache = {};
 
@@ -197,7 +203,7 @@ function renderDirectoryItems(items) {
         fileGrid.appendChild(div);
         
         const lazyImg = div.querySelector('.lazy-thumb');
-        if (lazyImg) lazyObserver.observe(lazyImg);
+        if (lazyImg) getObserver().observe(lazyImg);
     });
 }
 
