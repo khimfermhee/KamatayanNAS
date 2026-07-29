@@ -16,16 +16,25 @@ let currentMediaIndex = -1;
 
 // --- Authentication ---
 async function checkAuth() {
+    const cachedAuth = localStorage.getItem('kamatayan_auth');
+    if (cachedAuth) {
+        const authData = JSON.parse(cachedAuth);
+        showApp(authData.role);
+    }
+    
     try {
         const res = await fetch('api.php?action=check_auth');
         const json = await res.json();
         if (json.status === 'success') {
-            showApp(json.data.role);
+            localStorage.setItem('kamatayan_auth', JSON.stringify({ role: json.data.role }));
+            if (!cachedAuth) showApp(json.data.role);
         } else {
+            localStorage.removeItem('kamatayan_auth');
             showLogin();
         }
     } catch (e) {
-        showLogin();
+        if (!cachedAuth) showLogin();
+        console.error("Network error during auth check", e);
     }
 }
 
@@ -47,6 +56,7 @@ loginForm.addEventListener('submit', async (e) => {
         });
         const json = await res.json();
         if (json.status === 'success') {
+            localStorage.setItem('kamatayan_auth', JSON.stringify({ role: json.data.role }));
             showApp(json.data.role);
         } else {
             document.getElementById('login-error').innerText = json.message;
@@ -60,6 +70,7 @@ loginForm.addEventListener('submit', async (e) => {
 });
 
 btnLogout.addEventListener('click', async () => {
+    localStorage.removeItem('kamatayan_auth');
     await fetch('api.php?action=logout');
     showLogin();
 });
