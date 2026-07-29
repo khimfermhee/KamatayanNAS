@@ -36,7 +36,7 @@ loginForm.addEventListener('submit', async (e) => {
     
     const btn = loginForm.querySelector('button[type="submit"]');
     const originalText = btn.innerText;
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Logging in...';
+    btn.innerHTML = '<i class="fas fa-circle-notch btn-spinner"></i> Logging in...';
     btn.disabled = true;
     
     try {

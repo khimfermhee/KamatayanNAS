@@ -489,3 +489,12 @@ body {
 @keyframes spin {
     100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
+
+.btn-spinner {
+    display: inline-block;
+    animation: btn-spin 1s linear infinite;
+    margin-right: 8px;
+}
+@keyframes btn-spin {
+    100% { transform: rotate(360deg); }
+}
