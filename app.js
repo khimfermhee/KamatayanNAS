@@ -69,7 +69,9 @@ function showApp(role) {
     appView.classList.add('active');
     if (role === 'admin') btnAdmin.classList.remove('hidden');
     else btnAdmin.classList.add('hidden');
-    loadDir('');
+    
+    const hashPath = window.location.hash.substring(1);
+    loadDir(hashPath ? decodeURIComponent(hashPath) : '');
 }
 
 function showLogin() {
@@ -127,6 +129,7 @@ const dirCache = {};
 async function loadDir(path, forceRefresh = false) {
     clearThumbQueue();
     currentPath = path;
+    window.location.hash = path; // Make stateful in URL
     updateBreadcrumbs();
     
     if (!forceRefresh && dirCache[path]) {
@@ -439,6 +442,14 @@ function formatBytes(bytes, decimals = 2) {
 }
 
 // Init
+window.addEventListener('hashchange', () => {
+    const hashPath = window.location.hash.substring(1);
+    const decodedPath = decodeURIComponent(hashPath);
+    if (decodedPath !== currentPath) {
+        loadDir(decodedPath);
+    }
+});
+
 checkAuth();
 
 // Register Service Worker for PWA
