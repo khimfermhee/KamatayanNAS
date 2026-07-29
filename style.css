@@ -201,7 +201,14 @@ body {
     top: 0;
     z-index: 100;
 }
-.header-left, .header-right {
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 0;
+}
+.header-right {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -209,10 +216,14 @@ body {
 .breadcrumbs {
     display: flex;
     gap: 0.5rem;
-    font-size: 1.1rem;
+    font-size: clamp(0.75rem, 3.5vw, 1.1rem); /* Auto-scale font on mobile */
     font-weight: 500;
     overflow-x: auto;
     white-space: nowrap;
+    scrollbar-width: none; /* Hide scrollbar Firefox */
+}
+.breadcrumbs::-webkit-scrollbar {
+    display: none; /* Hide scrollbar Chrome/Safari */
 }
 .breadcrumb-item {
     cursor: pointer;
