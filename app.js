@@ -115,11 +115,19 @@ const lazyObserver = new IntersectionObserver((entries, observer) => {
     });
 }, { rootMargin: '200px' });
 
+const dirCache = {};
+
 // --- File Browser ---
-async function loadDir(path) {
+async function loadDir(path, forceRefresh = false) {
     clearThumbQueue();
     currentPath = path;
     updateBreadcrumbs();
+    
+    if (!forceRefresh && dirCache[path]) {
+        renderDirectoryItems(dirCache[path]);
+        return;
+    }
+    
     document.getElementById('loading-spinner').classList.remove('hidden');
     fileGrid.innerHTML = '';
     document.getElementById('empty-state').classList.add('hidden');
@@ -131,59 +139,66 @@ async function loadDir(path) {
         document.getElementById('loading-spinner').classList.add('hidden');
         
         if (json.status === 'success') {
-            currentItems = json.data;
-            mediaItems = currentItems.filter(i => ['image', 'video', 'audio'].includes(i.type));
-            
-            if (currentItems.length === 0) {
-                document.getElementById('empty-state').classList.remove('hidden');
-                return;
-            }
-            
-            currentItems.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'file-item';
-                div.dataset.path = item.path;
-                div.dataset.type = item.type;
-                div.dataset.name = item.name;
-                
-                let iconHtml = '';
-                if (item.type === 'image') {
-                    iconHtml = `<img class="file-thumb lazy-thumb" data-src="api.php?action=thumbnail&path=${encodeURIComponent(item.path)}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E">`;
-                } else if (item.type === 'folder') {
-                    iconHtml = `<div class="file-icon folder"><i class="fas fa-folder"></i></div>`;
-                } else if (item.type === 'video') {
-                    // Use #t=0.1 trick to make browser load the first frame as a thumbnail
-                    iconHtml = `<div style="position:relative; width:100%; height:120px; margin-bottom:1rem;">
-                                  <video class="file-thumb" style="margin-bottom:0;" src="api.php?action=stream&path=${encodeURIComponent(item.path)}#t=0.1" preload="metadata" muted></video>
-                                  <i class="fas fa-play-circle" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2rem; color:rgba(255,255,255,0.8); text-shadow:0 2px 4px rgba(0,0,0,0.5); pointer-events:none;"></i>
-                                </div>`;
-                } else if (item.type === 'audio') {
-                    iconHtml = `<div class="file-icon audio"><i class="fas fa-music"></i></div>`;
-                } else {
-                    iconHtml = `<div class="file-icon"><i class="fas fa-file"></i></div>`;
-                }
-                
-                const sizeStr = item.type === 'folder' ? '' : formatBytes(item.size);
-                
-                div.innerHTML = `
-                    ${iconHtml}
-                    <div class="file-name" title="${item.name}">${item.name}</div>
-                    <div class="file-meta">${sizeStr}</div>
-                `;
-                
-                div.addEventListener('click', () => handleItemClick(item));
-                div.addEventListener('contextmenu', (e) => showContextMenu(e, item));
-                
-                fileGrid.appendChild(div);
-                
-                const lazyImg = div.querySelector('.lazy-thumb');
-                if (lazyImg) lazyObserver.observe(lazyImg);
-            });
+            dirCache[path] = json.data;
+            renderDirectoryItems(json.data);
         }
     } catch (e) {
         console.error(e);
         document.getElementById('loading-spinner').classList.add('hidden');
     }
+}
+
+function renderDirectoryItems(items) {
+    fileGrid.innerHTML = '';
+    document.getElementById('empty-state').classList.add('hidden');
+    
+    currentItems = items;
+    mediaItems = currentItems.filter(i => ['image', 'video', 'audio'].includes(i.type));
+    
+    if (currentItems.length === 0) {
+        document.getElementById('empty-state').classList.remove('hidden');
+        return;
+    }
+    
+    currentItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'file-item';
+        div.dataset.path = item.path;
+        div.dataset.type = item.type;
+        div.dataset.name = item.name;
+        
+        let iconHtml = '';
+        if (item.type === 'image') {
+            iconHtml = `<img class="file-thumb lazy-thumb" data-src="api.php?action=thumbnail&path=${encodeURIComponent(item.path)}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E">`;
+        } else if (item.type === 'folder') {
+            iconHtml = `<div class="file-icon folder"><i class="fas fa-folder"></i></div>`;
+        } else if (item.type === 'video') {
+            iconHtml = `<div style="position:relative; width:100%; height:120px; margin-bottom:1rem;">
+                          <video class="file-thumb" style="margin-bottom:0;" src="api.php?action=stream&path=${encodeURIComponent(item.path)}#t=0.1" preload="metadata" muted></video>
+                          <i class="fas fa-play-circle" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2rem; color:rgba(255,255,255,0.8); text-shadow:0 2px 4px rgba(0,0,0,0.5); pointer-events:none;"></i>
+                        </div>`;
+        } else if (item.type === 'audio') {
+            iconHtml = `<div class="file-icon audio"><i class="fas fa-music"></i></div>`;
+        } else {
+            iconHtml = `<div class="file-icon"><i class="fas fa-file"></i></div>`;
+        }
+        
+        const sizeStr = item.type === 'folder' ? '' : formatBytes(item.size);
+        
+        div.innerHTML = `
+            ${iconHtml}
+            <div class="file-name" title="${item.name}">${item.name}</div>
+            <div class="file-meta">${sizeStr}</div>
+        `;
+        
+        div.addEventListener('click', () => handleItemClick(item));
+        div.addEventListener('contextmenu', (e) => showContextMenu(e, item));
+        
+        fileGrid.appendChild(div);
+        
+        const lazyImg = div.querySelector('.lazy-thumb');
+        if (lazyImg) lazyObserver.observe(lazyImg);
+    });
 }
 
 function handleItemClick(item) {
