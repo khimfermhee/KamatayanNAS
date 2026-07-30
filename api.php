@@ -303,17 +303,30 @@ switch ($action) {
         // Generate a 1280px preview for fast lightbox viewing
         $path = $_GET['path'] ?? '';
         $fullPath = getFullPath($path);
+        $mtime = $_GET['mtime'] ?? 0;
+        
+        $previewDir = __DIR__ . '/.previews';
+        if (!is_dir($previewDir)) @mkdir($previewDir);
+        
+        // Use provided mtime to construct cache key and skip SMB stat if cached
+        if (!$mtime && file_exists($fullPath)) $mtime = filemtime($fullPath);
+        $previewName = md5($fullPath) . '_' . $mtime . '.jpg';
+        $previewPath = $previewDir . '/' . $previewName;
+
+        // Serve instantly if cached
+        if (file_exists($previewPath)) {
+            header('Content-Type: image/jpeg');
+            header('Content-Length: ' . filesize($previewPath));
+            readfile($previewPath);
+            exit;
+        }
+
         if (!is_file($fullPath)) { http_response_code(404); die(); }
         $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
         if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
             header('Location: ?action=stream&path=' . urlencode($path));
             exit;
         }
-
-        $previewDir = __DIR__ . '/.previews';
-        if (!is_dir($previewDir)) @mkdir($previewDir);
-        $previewName = md5($fullPath) . '_' . filemtime($fullPath) . '.jpg';
-        $previewPath = $previewDir . '/' . $previewName;
 
         if (!function_exists('imagecreatetruecolor') || !is_dir($previewDir)) {
             header('Location: ?action=stream&path=' . urlencode($path));
@@ -354,7 +367,24 @@ switch ($action) {
         // Generate a simple thumbnail for images
         $path = $_GET['path'] ?? '';
         $fullPath = getFullPath($path);
+        $mtime = $_GET['mtime'] ?? 0;
         
+        $thumbDir = __DIR__ . '/.thumbs';
+        if (!is_dir($thumbDir)) @mkdir($thumbDir);
+        
+        // Use provided mtime to avoid slow SMB filemtime()
+        if (!$mtime && file_exists($fullPath)) $mtime = filemtime($fullPath);
+        $thumbName = md5($fullPath) . '_' . $mtime . '.jpg';
+        $thumbPath = $thumbDir . '/' . $thumbName;
+
+        // Serve instantly from local disk if cached, bypassing SMB completely
+        if (file_exists($thumbPath)) {
+            header('Content-Type: image/jpeg');
+            header('Content-Length: ' . filesize($thumbPath));
+            readfile($thumbPath);
+            exit;
+        }
+
         if (!is_file($fullPath)) {
             http_response_code(404);
             die("File not found");
@@ -365,15 +395,6 @@ switch ($action) {
             header('Location: ?action=stream&path=' . urlencode($path));
             exit;
         }
-
-        // Cache thumbnails in a local dir for speed
-        $thumbDir = __DIR__ . '/.thumbs';
-        if (!is_dir($thumbDir)) {
-            @mkdir($thumbDir);
-        }
-        
-        $thumbName = md5($fullPath) . '_' . filemtime($fullPath) . '.jpg';
-        $thumbPath = $thumbDir . '/' . $thumbName;
 
         // Check if GD extension is loaded, if not just stream the original
         if (!function_exists('imagecreatetruecolor') || !is_dir($thumbDir)) {

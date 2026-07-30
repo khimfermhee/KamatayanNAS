@@ -93,7 +93,7 @@ function showLogin() {
 // --- Thumbnail Queue Manager ---
 let thumbQueue = [];
 let activeThumbs = 0;
-const MAX_CONCURRENT_THUMBS = 4;
+const MAX_CONCURRENT_THUMBS = 12;
 
 function processThumbQueue() {
     if (activeThumbs >= MAX_CONCURRENT_THUMBS || thumbQueue.length === 0) return;
@@ -247,7 +247,7 @@ function renderNextBatch() {
         
         let iconHtml = '';
         if (item.type === 'image') {
-            iconHtml = `<img class="file-thumb lazy-thumb" data-src="api.php?action=thumbnail&path=${encodeURIComponent(item.path)}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E">`;
+            iconHtml = `<img class="file-thumb lazy-thumb" data-src="api.php?action=thumbnail&path=${encodeURIComponent(item.path)}&mtime=${item.modified}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E">`;
         } else if (item.type === 'folder') {
             iconHtml = `<div class="file-icon folder"><i class="fas fa-folder"></i></div>`;
         } else if (item.type === 'video') {
@@ -401,7 +401,7 @@ function renderLightboxItem() {
     lbInfo.innerText = `${currentMediaIndex + 1} / ${mediaItems.length} - ${item.name}`;
     
     if (item.type === 'image') {
-        const src = `api.php?action=preview&path=${encodeURIComponent(item.path)}`;
+        const src = `api.php?action=preview&path=${encodeURIComponent(item.path)}&mtime=${item.modified}`;
         lbContent.innerHTML = `<i class="fas fa-circle-notch lb-spinner" id="lb-loader"></i>
                                <img src="${src}" alt="${item.name}" onload="document.getElementById('lb-loader')?.remove()" onerror="document.getElementById('lb-loader')?.remove()">`;
     } else if (item.type === 'video') {
