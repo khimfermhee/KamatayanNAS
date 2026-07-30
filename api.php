@@ -180,8 +180,8 @@ switch ($action) {
                 'name' => $item,
                 'path' => ($path === '' ? '' : $path . '/') . $item,
                 'type' => $type,
-                'size' => @filesize($itemPath) ?: 0,
-                'modified' => @filemtime($itemPath) ?: 0
+                'size' => 0,
+                'modified' => 0
             ];
         }
         
@@ -193,6 +193,29 @@ switch ($action) {
         });
 
         respond('success', $items);
+        break;
+
+    case 'get_metadata':
+        $data = json_decode(file_get_contents('php://input'), true);
+        $path = $data['path'] ?? '';
+        $fullPath = getFullPath($path);
+        $files = $data['files'] ?? [];
+        
+        $meta = [];
+        foreach ($files as $file) {
+            $itemPath = $fullPath . DIRECTORY_SEPARATOR . $file;
+            if (file_exists($itemPath)) {
+                $stat = @stat($itemPath);
+                if ($stat) {
+                    $meta[] = [
+                        'name' => $file,
+                        'size' => $stat['size'],
+                        'modified' => $stat['mtime']
+                    ];
+                }
+            }
+        }
+        respond('success', $meta);
         break;
 
     case 'delete_file':
@@ -247,6 +270,16 @@ switch ($action) {
         $mime = $mime_types[$ext] ?? 'application/octet-stream';
         $size = filesize($fullPath);
         $time = date('r', filemtime($fullPath));
+        
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . $size);
+        header('Last-Modified: ' . $time);
+        header('Cache-Control: public, max-age=31536000, immutable');
+        
+        if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) >= filemtime($fullPath)) {
+            http_response_code(304);
+            exit;
+        }
         
         $fm = @fopen($fullPath, 'rb');
         if (!$fm) {
@@ -313,6 +346,8 @@ switch ($action) {
         $previewName = md5($fullPath) . '_' . $mtime . '.jpg';
         $previewPath = $previewDir . '/' . $previewName;
 
+        header('Cache-Control: public, max-age=31536000, immutable');
+
         // Serve instantly if cached
         if (file_exists($previewPath)) {
             header('Content-Type: image/jpeg');
@@ -376,6 +411,8 @@ switch ($action) {
         if (!$mtime && file_exists($fullPath)) $mtime = filemtime($fullPath);
         $thumbName = md5($fullPath) . '_' . $mtime . '.jpg';
         $thumbPath = $thumbDir . '/' . $thumbName;
+
+        header('Cache-Control: public, max-age=31536000, immutable');
 
         // Serve instantly from local disk if cached, bypassing SMB completely
         if (file_exists($thumbPath)) {

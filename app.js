@@ -160,8 +160,11 @@ async function loadDir(path, forceRefresh = false) {
         
         if (json.status === 'success') {
             dirCache[path] = json.data;
-            sortItems(json.data); // Apply current sort
+            sortItems(json.data); // Apply current sort (by name initially)
             renderDirectoryItems(json.data);
+            
+            // Kick off background metadata fetch
+            fetchMetadata(path, json.data);
         }
     } catch (e) {
         console.error(e);
@@ -171,6 +174,58 @@ async function loadDir(path, forceRefresh = false) {
 
 let currentRenderIndex = 0;
 const RENDER_BATCH_SIZE = 50;
+
+async function fetchMetadata(path, items) {
+    if (items.length === 0) return;
+    const progressEl = document.getElementById('meta-progress');
+    progressEl.classList.remove('hidden');
+    
+    const BATCH_SIZE = 100;
+    let loaded = 0;
+    
+    for (let i = 0; i < items.length; i += BATCH_SIZE) {
+        if (currentPath !== path) break; // User navigated away
+        
+        const batch = items.slice(i, i + BATCH_SIZE);
+        // Only fetch if they don't have size/modified yet
+        const filesToFetch = batch.filter(it => it.type !== 'folder' && it.size === 0 && it.modified === 0).map(it => it.name);
+        
+        if (filesToFetch.length > 0) {
+            try {
+                const res = await fetch('api.php?action=get_metadata', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path, files: filesToFetch })
+                });
+                const json = await res.json();
+                if (json.status === 'success' && currentPath === path) {
+                    json.data.forEach(meta => {
+                        const item = items.find(it => it.name === meta.name);
+                        if (item) {
+                            item.size = meta.size;
+                            item.modified = meta.modified;
+                        }
+                    });
+                    
+                    // If currently sorted by size or date, re-sort and re-render incrementally
+                    const sortVal = document.getElementById('sort-select').value;
+                    if (sortVal.includes('size') || sortVal.includes('date')) {
+                        sortItems(currentItems);
+                        renderDirectoryItems(currentItems);
+                    }
+                }
+            } catch (e) {
+                console.error('Metadata fetch failed', e);
+            }
+        }
+        loaded += batch.length;
+        progressEl.innerText = `Loading data... ${Math.min(loaded, items.length)}/${items.length}`;
+    }
+    
+    if (currentPath === path) {
+        progressEl.classList.add('hidden');
+    }
+}
 
 document.getElementById('sort-select').addEventListener('change', () => {
     if (currentItems.length > 0) {
