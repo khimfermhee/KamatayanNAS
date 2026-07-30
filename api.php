@@ -308,6 +308,9 @@ switch ($action) {
             header("Content-Transfer-Encoding: binary");
             header("Last-Modified: $time");
 
+            // Disable PHP output buffering completely to prevent XAMPP from starving the stream
+            while (ob_get_level()) ob_end_clean();
+
             $cur = $begin;
             fseek($fm, $begin, 0);
 
@@ -325,6 +328,9 @@ switch ($action) {
             header('Accept-Ranges: bytes');
             header("Content-Disposition: inline; filename=".basename($fullPath));
             header("Last-Modified: $time");
+            
+            // Disable PHP output buffering completely
+            while (ob_get_level()) ob_end_clean();
             
             fseek($fm, 0);
             while(!feof($fm) && (connection_status() == 0)) {
