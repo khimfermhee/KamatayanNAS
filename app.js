@@ -145,6 +145,7 @@ async function loadDir(path, forceRefresh = false) {
     
     if (!forceRefresh && dirCache[path]) {
         renderDirectoryItems(dirCache[path]);
+        fetchMetadata(path, dirCache[path]); // Resume or start fetching metadata if incomplete
         return;
     }
     
@@ -199,19 +200,27 @@ async function fetchMetadata(path, items) {
                 });
                 const json = await res.json();
                 if (json.status === 'success' && currentPath === path) {
+                    let needsResort = false;
                     json.data.forEach(meta => {
                         const item = items.find(it => it.name === meta.name);
                         if (item) {
+                            if (item.size === 0 && meta.size > 0) needsResort = true;
                             item.size = meta.size;
                             item.modified = meta.modified;
+                            
+                            // Directly update DOM to prevent scroll jumping and show correct sizes instantly
+                            const el = document.querySelector(`.file-item[data-name="${CSS.escape(item.name)}"] .file-meta`);
+                            if (el) {
+                                el.innerText = `${formatSize(item.size)} • ${new Date(item.modified * 1000).toLocaleDateString()}`;
+                            }
                         }
                     });
                     
-                    // If currently sorted by size or date, re-sort and re-render incrementally
+                    // If sorted by size/date, only resort the internal array so next render is correct.
+                    // We don't re-render the grid immediately to avoid scroll-jumping.
                     const sortVal = document.getElementById('sort-select').value;
-                    if (sortVal.includes('size') || sortVal.includes('date')) {
+                    if (needsResort && (sortVal.includes('size') || sortVal.includes('date'))) {
                         sortItems(currentItems);
-                        renderDirectoryItems(currentItems);
                     }
                 }
             } catch (e) {
