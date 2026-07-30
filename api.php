@@ -205,14 +205,11 @@ switch ($action) {
         foreach ($files as $file) {
             $itemPath = $fullPath . DIRECTORY_SEPARATOR . $file;
             if (file_exists($itemPath)) {
-                $stat = @stat($itemPath);
-                if ($stat) {
-                    $meta[] = [
-                        'name' => $file,
-                        'size' => $stat['size'],
-                        'modified' => $stat['mtime']
-                    ];
-                }
+                $meta[] = [
+                    'name' => $file,
+                    'size' => (int)@filesize($itemPath),
+                    'modified' => (int)@filemtime($itemPath)
+                ];
             }
         }
         respond('success', $meta);

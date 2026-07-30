@@ -210,8 +210,8 @@ async function fetchMetadata(path, items) {
                             
                             // Directly update DOM to prevent scroll jumping and show correct sizes instantly
                             const el = document.querySelector(`.file-item[data-name="${CSS.escape(item.name)}"] .file-meta`);
-                            if (el) {
-                                el.innerText = `${formatSize(item.size)} • ${new Date(item.modified * 1000).toLocaleDateString()}`;
+                            if (el && item.type !== 'folder') {
+                                el.innerText = formatBytes(item.size);
                             }
                         }
                     });
