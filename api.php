@@ -300,8 +300,7 @@ switch ($action) {
             
             header('HTTP/1.1 206 Partial Content');
             header("Content-Type: $mime");
-            header('Cache-Control: public, must-revalidate, max-age=0');
-            header('Pragma: no-cache');  
+            header('Cache-Control: public, max-age=31536000, immutable');
             header('Accept-Ranges: bytes');
             header('Content-Length:' . (($end - $begin) + 1));
             header("Content-Range: bytes $begin-$end/$size");
@@ -312,14 +311,14 @@ switch ($action) {
             $cur = $begin;
             fseek($fm, $begin, 0);
 
-            // Stream file in large chunks (8MB) to minimize SMB network latency overhead
+            // Stream file in 512KB chunks for smooth buffering without starving the player
             while(!feof($fm) && $cur <= $end && (connection_status() == 0)) {
-                print fread($fm, min(1024 * 1024 * 8, ($end - $cur) + 1));
-                $cur += 1024 * 1024 * 8;
+                print fread($fm, min(1024 * 512, ($end - $cur) + 1));
+                $cur += 1024 * 512;
                 flush();
             }
         } else {
-            // Optimized full-file stream in 8MB chunks to defeat SMB latency
+            // Optimized full-file stream in 512KB chunks
             header('HTTP/1.1 200 OK');
             header("Content-Type: $mime");
             header('Content-Length: ' . $size);
@@ -329,7 +328,7 @@ switch ($action) {
             
             fseek($fm, 0);
             while(!feof($fm) && (connection_status() == 0)) {
-                print fread($fm, 1024 * 1024 * 8);
+                print fread($fm, 1024 * 512);
                 flush();
             }
         }
