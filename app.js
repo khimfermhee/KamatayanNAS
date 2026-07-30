@@ -456,7 +456,7 @@ function renderLightboxItem() {
     lbInfo.innerText = `${currentMediaIndex + 1} / ${mediaItems.length} - ${item.name}`;
     
     if (item.type === 'image') {
-        const src = `api.php?action=preview&path=${encodeURIComponent(item.path)}&mtime=${item.modified}`;
+        const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}&mtime=${item.modified}`;
         lbContent.innerHTML = `<i class="fas fa-circle-notch lb-spinner" id="lb-loader"></i>
                                <img src="${src}" alt="${item.name}" onload="document.getElementById('lb-loader')?.remove()" onerror="document.getElementById('lb-loader')?.remove()">`;
     } else if (item.type === 'video') {

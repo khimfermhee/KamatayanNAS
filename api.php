@@ -312,90 +312,29 @@ switch ($action) {
             $cur = $begin;
             fseek($fm, $begin, 0);
 
-            // Stream file in chunks (16KB) for video seeking
+            // Stream file in large chunks (8MB) to minimize SMB network latency overhead
             while(!feof($fm) && $cur <= $end && (connection_status() == 0)) {
-                print fread($fm, min(1024 * 16, ($end - $cur) + 1));
-                $cur += 1024 * 16;
+                print fread($fm, min(1024 * 1024 * 8, ($end - $cur) + 1));
+                $cur += 1024 * 1024 * 8;
                 flush();
             }
         } else {
-            // Optimized full-file stream for images/initial video requests
+            // Optimized full-file stream in 8MB chunks to defeat SMB latency
             header('HTTP/1.1 200 OK');
             header("Content-Type: $mime");
             header('Content-Length: ' . $size);
             header('Accept-Ranges: bytes');
             header("Content-Disposition: inline; filename=".basename($fullPath));
             header("Last-Modified: $time");
-            readfile($fullPath);
+            
+            fseek($fm, 0);
+            while(!feof($fm) && (connection_status() == 0)) {
+                print fread($fm, 1024 * 1024 * 8);
+                flush();
+            }
         }
         
         fclose($fm);
-        exit;
-
-    case 'preview':
-        // Generate a 1280px preview for fast lightbox viewing
-        $path = $_GET['path'] ?? '';
-        $fullPath = getFullPath($path);
-        $mtime = $_GET['mtime'] ?? 0;
-        
-        $previewDir = __DIR__ . '/.previews';
-        if (!is_dir($previewDir)) @mkdir($previewDir);
-        
-        // Use provided mtime to construct cache key and skip SMB stat if cached
-        if (!$mtime && file_exists($fullPath)) $mtime = filemtime($fullPath);
-        $previewName = md5($fullPath) . '_' . $mtime . '.jpg';
-        $previewPath = $previewDir . '/' . $previewName;
-
-        header('Cache-Control: public, max-age=31536000, immutable');
-
-        // Serve instantly if cached
-        if (file_exists($previewPath)) {
-            header('Content-Type: image/jpeg');
-            header('Content-Length: ' . filesize($previewPath));
-            readfile($previewPath);
-            exit;
-        }
-
-        if (!is_file($fullPath)) { http_response_code(404); die(); }
-        $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-            header('Location: ?action=stream&path=' . urlencode($path));
-            exit;
-        }
-
-        if (!function_exists('imagecreatetruecolor') || !is_dir($previewDir)) {
-            header('Location: ?action=stream&path=' . urlencode($path));
-            exit;
-        }
-
-        if (!file_exists($previewPath)) {
-            $size = @getimagesize($fullPath);
-            if (!$size || $size[0] == 0) { header('Location: ?action=stream&path=' . urlencode($path)); exit; }
-            $width = $size[0]; $height = $size[1];
-            
-            // Only resize if it's larger than 1280px
-            if ($width > 1280 || $height > 1280) {
-                if ($width > $height) { $new_width = 1280; $new_height = floor($height * (1280 / $width)); }
-                else { $new_height = 1280; $new_width = floor($width * (1280 / $height)); }
-            } else {
-                header('Location: ?action=stream&path=' . urlencode($path)); exit;
-            }
-
-            $thumb = imagecreatetruecolor($new_width, $new_height);
-            $source = false;
-            if ($ext == 'jpg' || $ext == 'jpeg') $source = @imagecreatefromjpeg($fullPath);
-            elseif ($ext == 'png') { $source = @imagecreatefrompng($fullPath); if($source) { imagealphablending($thumb, false); imagesavealpha($thumb, true); } }
-            elseif ($ext == 'gif') $source = @imagecreatefromgif($fullPath);
-            elseif ($ext == 'webp' && function_exists('imagecreatefromwebp')) $source = @imagecreatefromwebp($fullPath);
-            
-            if (!$source) { imagedestroy($thumb); header('Location: ?action=stream&path=' . urlencode($path)); exit; }
-            imagecopyresampled($thumb, $source, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
-            imagejpeg($thumb, $previewPath, 85);
-            imagedestroy($thumb); imagedestroy($source);
-        }
-        header('Content-Type: image/jpeg');
-        header('Content-Length: ' . filesize($previewPath));
-        readfile($previewPath);
         exit;
 
     case 'thumbnail':
