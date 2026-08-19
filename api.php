@@ -325,15 +325,11 @@ switch ($action) {
             header('Accept-Ranges: bytes');
             header("Content-Disposition: inline; filename=".basename($fullPath));
             header("Last-Modified: $time");
-            
             // Disable PHP output buffering completely
             while (ob_get_level()) ob_end_clean();
             
-            fseek($fm, 0);
-            while(!feof($fm) && (connection_status() == 0)) {
-                print fread($fm, 1024 * 512);
-                flush();
-            }
+            // readfile() is highly optimized in C and avoids PHP memory allocation overhead for large files
+            readfile($fullPath);
         }
         
         fclose($fm);

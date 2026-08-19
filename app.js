@@ -465,9 +465,24 @@ function renderLightboxItem() {
     lbInfo.innerText = `${currentMediaIndex + 1} / ${mediaItems.length} - ${item.name}`;
     
     if (item.type === 'image') {
-        const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}&mtime=${item.modified}`;
+        const thumbSrc = `api.php?action=thumbnail&path=${encodeURIComponent(item.path)}&mtime=${item.modified}`;
+        const highResSrc = `api.php?action=stream&path=${encodeURIComponent(item.path)}&mtime=${item.modified}`;
+        
+        // Show low-res thumbnail instantly while high-res loads in background
         lbContent.innerHTML = `<i class="fas fa-circle-notch lb-spinner" id="lb-loader"></i>
-                               <img src="${src}" alt="${item.name}" onload="document.getElementById('lb-loader')?.remove()" onerror="document.getElementById('lb-loader')?.remove()">`;
+                               <img src="${thumbSrc}" id="lb-img-main" alt="${item.name}" style="filter: blur(10px); transition: filter 0.5s ease-out;">`;
+                               
+        const highResImg = new Image();
+        highResImg.src = highResSrc;
+        highResImg.onload = () => {
+            const currentImg = document.getElementById('lb-img-main');
+            // Ensure the user hasn't swiped to a different image before replacing
+            if (currentImg && currentImg.src.includes('action=thumbnail')) {
+                currentImg.src = highResSrc;
+                currentImg.style.filter = 'blur(0px)';
+                document.getElementById('lb-loader')?.remove();
+            }
+        };
     } else if (item.type === 'video') {
         const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}`;
         lbContent.innerHTML = `<video src="${src}" controls autoplay></video>`;
