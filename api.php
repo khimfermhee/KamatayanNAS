@@ -196,6 +196,7 @@ switch ($action) {
         break;
 
     case 'get_metadata':
+        session_write_close();
         $data = json_decode(file_get_contents('php://input'), true);
         $path = $data['path'] ?? '';
         $fullPath = getFullPath($path);
@@ -247,6 +248,9 @@ switch ($action) {
         break;
 
     case 'stream':
+        // Close session write lock to allow concurrent requests (crucial for video buffering & seeking!)
+        session_write_close();
+        
         // For viewing images, playing videos/audio directly
         $path = $_GET['path'] ?? '';
         $fullPath = getFullPath($path);
@@ -336,6 +340,7 @@ switch ($action) {
         exit;
 
     case 'thumbnail':
+        session_write_close();
         // Generate a simple thumbnail for images
         $path = $_GET['path'] ?? '';
         $fullPath = getFullPath($path);
