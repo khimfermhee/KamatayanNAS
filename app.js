@@ -485,7 +485,35 @@ function renderLightboxItem() {
         };
     } else if (item.type === 'video') {
         const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}&cb=${Date.now()}`;
-        lbContent.innerHTML = `<video src="${src}" controls autoplay preload="auto"></video>`;
+        
+        lbContent.innerHTML = `
+            <div id="lb-loader-container" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); display:flex; flex-direction:column; align-items:center; z-index:10; background:rgba(0,0,0,0.8); padding:20px; border-radius:10px; text-align:center; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                <i class="fas fa-circle-notch lb-spinner" style="position:static; transform:none; margin-bottom:15px;"></i>
+                <div style="color:white; font-size:16px; margin-bottom:15px; font-weight:bold;">Buffering for smooth playback...</div>
+                <div style="color:#ccc; font-size:12px; margin-bottom:15px;">Please wait until the browser has buffered enough data.</div>
+                <button onclick="forcePlayVideo()" style="background:#007bff; color:white; border:none; padding:8px 16px; border-radius:5px; cursor:pointer; font-size:14px; transition: background 0.2s;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">Play Now Anyway</button>
+            </div>
+            <video src="${src}" id="lb-vid-main" preload="auto" style="pointer-events:none; opacity:0.3; transition:all 0.5s;"></video>
+        `;
+        
+        const vid = document.getElementById('lb-vid-main');
+        
+        window.forcePlayVideo = () => {
+            const loader = document.getElementById('lb-loader-container');
+            if (loader) loader.remove();
+            if (vid) {
+                vid.style.pointerEvents = 'auto';
+                vid.style.opacity = '1';
+                vid.controls = true;
+                vid.play().catch(e => console.log('Autoplay blocked by browser'));
+            }
+        };
+        
+        vid.addEventListener('canplaythrough', () => {
+            if (document.getElementById('lb-loader-container')) {
+                window.forcePlayVideo();
+            }
+        });
     } else if (item.type === 'audio') {
         const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}&cb=${Date.now()}`;
         lbContent.innerHTML = `<audio src="${src}" controls autoplay></audio>`;
