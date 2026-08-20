@@ -430,9 +430,15 @@ body {
     max-width: 90vw;
     max-height: 85vh;
     object-fit: contain;
+    background: #000;
+}
+.lightbox-content video {
+    transform: translateZ(0);
+    will-change: transform;
+}
+.lightbox-content img {
     border-radius: 12px;
     box-shadow: 0 15px 40px rgba(0,0,0,0.8);
-    background: #000;
 }
 .lightbox-controls {
     display: flex;
