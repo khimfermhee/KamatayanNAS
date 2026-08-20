@@ -485,7 +485,7 @@ function renderLightboxItem() {
         };
     } else if (item.type === 'video') {
         const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}&cb=${Date.now()}`;
-        lbContent.innerHTML = `<video src="${src}" controls autoplay></video>`;
+        lbContent.innerHTML = `<video src="${src}" controls autoplay preload="auto"></video>`;
     } else if (item.type === 'audio') {
         const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}&cb=${Date.now()}`;
         lbContent.innerHTML = `<audio src="${src}" controls autoplay></audio>`;

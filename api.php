@@ -329,20 +329,10 @@ switch ($action) {
             // Disable PHP output buffering completely to prevent XAMPP from starving the stream
             while (ob_get_level()) ob_end_clean();
 
-            $cur = $begin;
-            fseek($fm, $begin, 0);
-
-            // Stream file in 512KB chunks for smooth buffering without starving the player
-            while(!feof($fm) && $cur <= $end && (connection_status() == 0)) {
-                $bytesToRead = min(1024 * 512, ($end - $cur) + 1);
-                $buffer = fread($fm, $bytesToRead);
-                if ($buffer === false || strlen($buffer) === 0) {
-                    break;
-                }
-                print $buffer;
-                $cur += strlen($buffer);
-                flush();
-            }
+            // Use C-optimized stream_copy_to_stream for maximum throughput instead of PHP memory loops
+            $out = fopen('php://output', 'wb');
+            stream_copy_to_stream($fm, $out, ($end - $begin) + 1, $begin);
+            fclose($out);
         } else {
             // Optimized full-file stream in 512KB chunks
             header('HTTP/1.1 200 OK');
