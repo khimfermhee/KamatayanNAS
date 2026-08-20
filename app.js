@@ -541,12 +541,6 @@ function renderLightboxItem() {
                 }
             }
         });
-        
-        vid.addEventListener('canplaythrough', () => {
-            if (document.getElementById('lb-loader-container')) {
-                window.forcePlayNativeVideo();
-            }
-        });
     } else if (item.type === 'audio') {
         const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}&cb=${Date.now()}`;
         lbContent.innerHTML = `<audio src="${src}" controls autoplay></audio>`;
