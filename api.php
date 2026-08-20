@@ -322,7 +322,8 @@ switch ($action) {
             header('Accept-Ranges: bytes');
             header('Content-Length: ' . (($end - $begin) + 1));
             header("Content-Range: bytes $begin-$end/$size");
-            header("Content-Disposition: inline; filename=".basename($fullPath));
+            $disp = isset($_GET['dl']) ? 'attachment' : 'inline';
+            header("Content-Disposition: $disp; filename=".basename($fullPath));
             header("Content-Transfer-Encoding: binary");
             header("Last-Modified: $time");
 
@@ -330,8 +331,9 @@ switch ($action) {
             while (ob_get_level()) ob_end_clean();
 
             // Use C-optimized stream_copy_to_stream for maximum throughput instead of PHP memory loops
+            fseek($fm, $begin, 0);
             $out = fopen('php://output', 'wb');
-            stream_copy_to_stream($fm, $out, ($end - $begin) + 1, $begin);
+            stream_copy_to_stream($fm, $out, ($end - $begin) + 1);
             fclose($out);
         } else {
             // Optimized full-file stream in 512KB chunks
@@ -339,7 +341,9 @@ switch ($action) {
             header("Content-Type: $mime");
             header('Content-Length: ' . $size);
             header('Accept-Ranges: bytes');
-            header("Content-Disposition: inline; filename=".basename($fullPath));
+            
+            $disp = isset($_GET['dl']) ? 'attachment' : 'inline';
+            header("Content-Disposition: $disp; filename=".basename($fullPath));
             header("Last-Modified: $time");
             // Disable PHP output buffering completely
             while (ob_get_level()) ob_end_clean();

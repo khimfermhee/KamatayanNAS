@@ -508,7 +508,10 @@ function renderLightboxItem() {
                     <div id="lb-progress-bar" style="width: 0%; height: 100%; background: #007bff; transition: width 0.3s;"></div>
                 </div>
                 <div id="lb-progress-text" style="color:#ccc; font-size:12px; margin-bottom:15px;">Connecting to NAS...</div>
-                <button onclick="forcePlayNativeVideo()" style="background:#28a745; color:white; border:none; padding:8px 16px; border-radius:5px; cursor:pointer; font-size:14px; transition: background 0.2s;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">Play Now Anyway</button>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button onclick="forcePlayNativeVideo()" style="background:#28a745; color:white; border:none; padding:8px 16px; border-radius:5px; cursor:pointer; font-size:14px; transition: background 0.2s;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'"><i class="fas fa-play"></i> Play Anyway</button>
+                    <a href="${src}&dl=1" download style="text-decoration:none; background:#007bff; color:white; border:none; padding:8px 16px; border-radius:5px; cursor:pointer; font-size:14px; transition: background 0.2s;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'"><i class="fas fa-download"></i> Download</a>
+                </div>
             </div>
             <video src="${src}" id="lb-vid-main" preload="auto" style="opacity:0.3; pointer-events:none; transition:all 0.5s; width:100%; height:100%; object-fit:contain;"></video>
         `;
