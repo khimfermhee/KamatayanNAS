@@ -251,6 +251,9 @@ switch ($action) {
         // Close session write lock to allow concurrent requests (crucial for video buffering & seeking!)
         session_write_close();
         
+        // Disable execution time limit so large videos don't get killed by PHP after 30 seconds
+        @set_time_limit(0);
+        
         // Disable Apache gzip compression which destroys HTTP_RANGE byte offsets
         if (function_exists('apache_setenv')) {
             @apache_setenv('no-gzip', '1');
