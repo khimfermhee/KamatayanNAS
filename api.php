@@ -251,6 +251,12 @@ switch ($action) {
         // Close session write lock to allow concurrent requests (crucial for video buffering & seeking!)
         session_write_close();
         
+        // Disable Apache gzip compression which destroys HTTP_RANGE byte offsets
+        if (function_exists('apache_setenv')) {
+            @apache_setenv('no-gzip', '1');
+        }
+        @ini_set('zlib.output_compression', 'Off');
+        
         // For viewing images, playing videos/audio directly
         $path = $_GET['path'] ?? '';
         $fullPath = getFullPath($path);
@@ -298,7 +304,11 @@ switch ($action) {
                     $end = intval($matches[2]);
                 }
             }
-            if ($begin > $size || $end > $size || $begin > $end) {
+            
+            // HTTP spec: if end exceeds file size, truncate it, do not return 416
+            $end = min($end, $size - 1);
+            
+            if ($begin >= $size || $begin > $end) {
                 header('HTTP/1.1 416 Requested Range Not Satisfiable');
                 header("Content-Range: bytes */$size");
                 exit;
@@ -307,7 +317,7 @@ switch ($action) {
             header('HTTP/1.1 206 Partial Content');
             header("Content-Type: $mime");
             header('Accept-Ranges: bytes');
-            header('Content-Length:' . (($end - $begin) + 1));
+            header('Content-Length: ' . (($end - $begin) + 1));
             header("Content-Range: bytes $begin-$end/$size");
             header("Content-Disposition: inline; filename=".basename($fullPath));
             header("Content-Transfer-Encoding: binary");

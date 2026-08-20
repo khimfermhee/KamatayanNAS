@@ -316,7 +316,7 @@ function renderNextBatch() {
             iconHtml = `<div class="file-icon folder"><i class="fas fa-folder"></i></div>`;
         } else if (item.type === 'video') {
             iconHtml = `<div style="position:relative; width:100%; height:120px; margin-bottom:1rem;">
-                          <video class="file-thumb" style="margin-bottom:0;" src="api.php?action=stream&path=${encodeURIComponent(item.path)}#t=0.1" preload="metadata" muted></video>
+                          <video class="file-thumb" style="margin-bottom:0;" src="api.php?action=stream&path=${encodeURIComponent(item.path)}&cb=${Date.now()}#t=0.1" preload="metadata" muted></video>
                           <i class="fas fa-play-circle" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2rem; color:rgba(255,255,255,0.8); text-shadow:0 2px 4px rgba(0,0,0,0.5); pointer-events:none;"></i>
                         </div>`;
         } else if (item.type === 'audio') {
@@ -484,10 +484,10 @@ function renderLightboxItem() {
             }
         };
     } else if (item.type === 'video') {
-        const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}`;
+        const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}&cb=${Date.now()}`;
         lbContent.innerHTML = `<video src="${src}" controls autoplay></video>`;
     } else if (item.type === 'audio') {
-        const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}`;
+        const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}&cb=${Date.now()}`;
         lbContent.innerHTML = `<audio src="${src}" controls autoplay></audio>`;
     }
 }
