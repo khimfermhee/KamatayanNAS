@@ -503,50 +503,49 @@ function renderLightboxItem() {
         
         lbContent.innerHTML = `
             <div id="lb-loader-container" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); display:flex; flex-direction:column; align-items:center; z-index:10; background:rgba(0,0,0,0.8); padding:20px; border-radius:10px; text-align:center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 80%; max-width: 400px;">
-                <div style="color:white; font-size:16px; margin-bottom:15px; font-weight:bold;">Buffering video securely...</div>
+                <div style="color:white; font-size:16px; margin-bottom:15px; font-weight:bold;">Downloading video...</div>
                 <div style="width: 100%; background: #333; border-radius: 5px; height: 10px; margin-bottom: 10px; overflow: hidden;">
-                    <div id="lb-progress-bar" style="width: 0%; height: 100%; background: #007bff; transition: width 0.3s;"></div>
+                    <div id="lb-progress-bar" style="width: 0%; height: 100%; background: #007bff; transition: width 0.1s;"></div>
                 </div>
-                <div id="lb-progress-text" style="color:#ccc; font-size:12px; margin-bottom:15px;">Connecting to NAS...</div>
-                <button onclick="forcePlayNativeVideo()" style="background:#28a745; color:white; border:none; padding:8px 16px; border-radius:5px; cursor:pointer; font-size:14px; transition: background 0.2s;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">Play Now Anyway</button>
+                <div id="lb-progress-text" style="color:#ccc; font-size:12px; margin-bottom:15px;">0%</div>
+                <button onclick="cleanupVideoDownload(); document.querySelector('.close-lightbox').click();" style="background:#dc3545; color:white; border:none; padding:8px 16px; border-radius:5px; cursor:pointer; font-size:14px;">Cancel</button>
             </div>
-            <video src="${src}" id="lb-vid-main" preload="auto" style="opacity:0.3; pointer-events:none; transition:all 0.5s; width:100%; height:100%; object-fit:contain;"></video>
+            <video id="lb-vid-main" style="display:none; width:100%; height:100%; object-fit:contain;"></video>
         `;
         
         const vid = document.getElementById('lb-vid-main');
         
-        window.forcePlayNativeVideo = () => {
-            const loader = document.getElementById('lb-loader-container');
-            if (loader) loader.remove();
-            if (vid) {
-                vid.style.opacity = '1';
-                vid.style.pointerEvents = 'auto';
-                vid.controls = true;
-                vid.play().catch(e => console.log('Autoplay blocked'));
-            }
-        };
+        currentVideoXhr = new XMLHttpRequest();
+        currentVideoXhr.open('GET', src, true);
+        currentVideoXhr.responseType = 'blob';
         
-        vid.addEventListener('progress', () => {
-            if (vid.duration > 0 && vid.buffered.length > 0) {
-                const bufferedEnd = vid.buffered.end(vid.buffered.length - 1);
-                const percent = Math.round((bufferedEnd / vid.duration) * 100);
+        currentVideoXhr.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const percent = Math.round((event.loaded / event.total) * 100);
                 const pb = document.getElementById('lb-progress-bar');
                 const pt = document.getElementById('lb-progress-text');
                 if (pb) pb.style.width = `${percent}%`;
-                if (pt) pt.innerText = `Buffered: ${percent}%`;
-                
-                // If it's effectively fully buffered
-                if (percent >= 99 && document.getElementById('lb-loader-container')) {
-                    window.forcePlayNativeVideo();
-                }
+                if (pt) pt.innerText = `${percent}% - ${formatBytes(event.loaded)} / ${formatBytes(event.total)}`;
             }
-        });
+        };
         
-        vid.addEventListener('canplaythrough', () => {
-            if (document.getElementById('lb-loader-container')) {
-                window.forcePlayNativeVideo();
+        currentVideoXhr.onload = () => {
+            if (currentVideoXhr.status === 200 || currentVideoXhr.status === 206) {
+                currentVideoBlobUrl = URL.createObjectURL(currentVideoXhr.response);
+                const loader = document.getElementById('lb-loader-container');
+                if (loader) loader.remove();
+                
+                vid.style.display = 'block';
+                vid.src = currentVideoBlobUrl;
+                vid.controls = true;
+                vid.play().catch(e => console.log('Autoplay blocked'));
+            } else {
+                const pt = document.getElementById('lb-progress-text');
+                if (pt) pt.innerText = "Download failed.";
             }
-        });
+        };
+        
+        currentVideoXhr.send();
     } else if (item.type === 'audio') {
         const src = `api.php?action=stream&path=${encodeURIComponent(item.path)}&cb=${Date.now()}`;
         lbContent.innerHTML = `<audio src="${src}" controls autoplay></audio>`;
