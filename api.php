@@ -298,10 +298,14 @@ switch ($action) {
                     $end = intval($matches[2]);
                 }
             }
+            if ($begin > $size || $end > $size || $begin > $end) {
+                header('HTTP/1.1 416 Requested Range Not Satisfiable');
+                header("Content-Range: bytes */$size");
+                exit;
+            }
             
             header('HTTP/1.1 206 Partial Content');
             header("Content-Type: $mime");
-            header('Cache-Control: public, max-age=31536000, immutable');
             header('Accept-Ranges: bytes');
             header('Content-Length:' . (($end - $begin) + 1));
             header("Content-Range: bytes $begin-$end/$size");
@@ -317,8 +321,13 @@ switch ($action) {
 
             // Stream file in 512KB chunks for smooth buffering without starving the player
             while(!feof($fm) && $cur <= $end && (connection_status() == 0)) {
-                print fread($fm, min(1024 * 512, ($end - $cur) + 1));
-                $cur += 1024 * 512;
+                $bytesToRead = min(1024 * 512, ($end - $cur) + 1);
+                $buffer = fread($fm, $bytesToRead);
+                if ($buffer === false || strlen($buffer) === 0) {
+                    break;
+                }
+                print $buffer;
+                $cur += strlen($buffer);
                 flush();
             }
         } else {
